@@ -1,0 +1,421 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, ChevronRight, ChevronLeft, MapPin, Scroll, Info } from 'lucide-react';
+
+// --- DATENBASIS ---
+const JOURNEY_DATA = [
+  {
+    id: 1,
+    title: "Der Aufbruch im Norden",
+    location: "Sirmium / Pannonien",
+    coords: [44.97, 19.61],
+    date: "175 n. Chr.",
+    text: "Marc Aurel plant, das Markomannen- und Sarmatenland endgültig zur Provinz zu machen. Doch die Nachricht vom Usurpationsversuch des Avidius Cassius im Osten zwingt ihn zum Abbruch. Er schließt eilig Frieden mit den Jazygen.",
+    quote: "So gab denn Marcus den Sarmaten- und Markomannenkrieg auf und zog gegen Cassius.",
+    source: "Historia Augusta, MA 25,1"
+  },
+  {
+    id: 2,
+    title: "Marsch durch Syrien",
+    location: "Syrien",
+    coords: [34.80, 38.99],
+    date: "Ende 175 n. Chr.",
+    text: "Der Kaiser reist mit seiner Frau Faustina und Sohn Commodus in den Osten. Noch bevor sie eintreffen, wird der Usurpator Cassius von einem eigenen Centurio getötet. Marc Aurel weigert sich, das Haupt des Feindes zu sehen.",
+    quote: "Er hatte die Absicht [...] reiste er mit seinem Vater nach Syrien und Ägypten.",
+    source: "Historia Augusta, C 2,3"
+  },
+  {
+    id: 3,
+    title: "Vergebung in Antiochia",
+    location: "Antiochia am Orontes",
+    coords: [36.20, 36.16],
+    date: "176 n. Chr.",
+    text: "Antiochia war das Zentrum des Aufstands. Anfangs mied Marc Aurel die Stadt und verbot öffentliche Schauspiele. Später besuchte er sie doch und zeigte Milde, indem er den Einwohnern verzieh.",
+    quote: "Hinterher hat er doch noch Antiochia besucht. [...] Er verzieh auch den Städten.",
+    source: "Historia Augusta, MA 25,8-26"
+  },
+  {
+    id: 4,
+    title: "Der Philosoph in Ägypten",
+    location: "Alexandria",
+    coords: [31.20, 29.91],
+    date: "176 n. Chr.",
+    text: "In Alexandria tritt der Kaiser als 'Bürger und Philosoph' auf. Er besucht Tempel und Lehrstätten. Er lässt die Korrespondenz des Cassius verbrennen, ohne sie zu lesen, um niemanden bestrafen zu müssen.",
+    quote: "Bei den Ägyptern gab er sich [...] als Bürger und Philosoph.",
+    source: "Historia Augusta, MA 26,3"
+  },
+  {
+    id: 5,
+    title: "Tod der Faustina",
+    location: "Halala (Faustinopolis)",
+    coords: [37.35, 34.90],
+    date: "176 n. Chr.",
+    text: "Auf der Rückreise stirbt Kaiserin Faustina in einem Dorf in Kappadokien. Marc Aurel trauert tief, lässt sie zur Göttin erheben und benennt den Ort in 'Faustinopolis' um.",
+    quote: "Zur nämlichen Zeit schied auch Faustina aus dem Leben.",
+    source: "Cassius Dio 72, 29,1"
+  },
+  {
+    id: 6,
+    title: "Einweihung in Athen",
+    location: "Athen",
+    coords: [37.98, 23.72],
+    date: "Herbst 176 n. Chr.",
+    text: "In Athen lässt sich Marc Aurel in die Eleusinischen Mysterien einweihen, um seine rituelle Reinheit zu beweisen. Er stiftet Lehrstühle für Philosophie.",
+    quote: "Nach der Regelung der Angelegenheiten im Osten hielt er sich in Athen auf.",
+    source: "Historia Augusta, MA 27,1"
+  },
+  {
+    id: 7,
+    title: "Rückkehr als Zivilist",
+    location: "Brundisium",
+    coords: [40.63, 17.94],
+    date: "176 n. Chr.",
+    text: "Bei der Landung in Italien legt er sofort den Feldherrenmantel ab und legt die Toga an. Auch seine Soldaten müssen Zivil tragen.",
+    quote: "Über Brundisium in Italien eingetroffen, legte er [...] selbst die Toga an.",
+    source: "Historia Augusta, MA 27,3"
+  },
+  {
+    id: 8,
+    title: "Triumph in der Hauptstadt",
+    location: "Rom",
+    coords: [41.90, 12.49],
+    date: "Dezember 176 n. Chr.",
+    text: "Marc Aurel feiert einen Triumphzug über die Germanen und Sarmaten. Commodus wird zum Mitregenten ernannt.",
+    quote: "In Rom zog er in Triumph ein.",
+    source: "Historia Augusta, MA 27,4"
+  },
+  {
+    id: 9,
+    title: "Pilgerfahrt zu den Ursprüngen",
+    location: "Lavinium",
+    coords: [41.66, 12.48],
+    date: "176/177 n. Chr.",
+    text: "Zum Abschluss reist er ins nahe Lavinium, die legendäre Gründungsstadt des Aeneas.",
+    quote: "Und reiste dort nach Lavinium.",
+    source: "Historia Augusta, MA 27,4"
+  }
+];
+
+export default function App() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+
+  const data = JOURNEY_DATA[currentStep];
+  const isLast = currentStep === JOURNEY_DATA.length - 1;
+  const isFirst = currentStep === 0;
+
+  // --- LEAFLET INITIALIZATION ---
+  // Wir laden Leaflet manuell, um Build-Fehler mit 'react-leaflet' zu vermeiden
+  useEffect(() => {
+    // 1. CSS laden
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    // 2. Fonts laden
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap';
+    document.head.appendChild(fontLink);
+
+    // 3. Script laden und Map initialisieren
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    script.onload = () => {
+      initMap();
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  const initMap = () => {
+    if (!window.L || !mapContainerRef.current) return;
+    if (mapInstanceRef.current) return; // Bereits initialisiert
+
+    const L = window.L;
+
+    // Karte erstellen
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([44.97, 19.61], 5);
+
+    mapInstanceRef.current = map;
+
+    // Tile Layer (Dark Matter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Marker erstellen
+    JOURNEY_DATA.forEach((stop, index) => {
+      // Custom DivIcon für CSS-Styling
+      const icon = L.divIcon({
+        className: 'custom-marker-icon', // Klasse ist egal, wir stylen das HTML
+        html: `<div id="marker-${index}" style="
+          width: 24px;
+          height: 24px;
+          background-color: ${index === 0 ? '#f59e0b' : '#334155'};
+          border: 2px solid ${index === 0 ? '#fff' : '#475569'};
+          border-radius: 50%;
+          transition: all 0.5s ease;
+          box-shadow: 0 0 10px rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-family: 'Lato', sans-serif;
+          font-weight: bold;
+          font-size: 12px;
+        ">${index + 1}</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      const marker = L.marker(stop.coords, { icon }).addTo(map);
+      
+      // Popup binden
+      const popupContent = `
+        <div style="font-family: 'Cinzel', serif; text-align: center;">
+          <strong style="color: #d97706; font-size: 14px;">${stop.title}</strong><br/>
+          <span style="color: #94a3b8; font-size: 11px;">${stop.date}</span>
+        </div>
+      `;
+      
+      // Popup Styling via CSS-Klasse im Leaflet-Kontext ist schwer, daher inline styles im string
+      marker.bindPopup(popupContent, {
+        closeButton: false,
+        className: 'custom-leaflet-popup' 
+      });
+
+      // Klick Event
+      marker.on('click', () => {
+        setCurrentStep(index);
+      });
+
+      markersRef.current[index] = marker;
+    });
+
+    // Style-Fixes für Leaflet Popups
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .leaflet-popup-content-wrapper {
+        background: #0f172a; /* slate-900 */
+        border: 1px solid #78350f; /* amber-900 */
+        border-radius: 4px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
+      }
+      .leaflet-popup-tip {
+        background: #0f172a;
+        border-left: 1px solid #78350f; /* amber-900 */
+        border-top: 1px solid #78350f; /* amber-900 */
+      }
+      .leaflet-container {
+        background: #020617;
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
+  // --- EFFECT: Update Map on Step Change ---
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.L) return;
+    
+    const map = mapInstanceRef.current;
+    const currentCoords = JOURNEY_DATA[currentStep].coords;
+
+    // 1. Kamerafahrt
+    map.flyTo(currentCoords, 6, {
+      animate: true,
+      duration: 2.0,
+      easeLinearity: 0.25
+    });
+
+    // 2. Marker Styles aktualisieren
+    JOURNEY_DATA.forEach((_, index) => {
+      const markerEl = document.getElementById(`marker-${index}`);
+      if (markerEl) {
+        if (index === currentStep) {
+          // Aktiv
+          markerEl.style.backgroundColor = '#d97706'; // amber-600
+          markerEl.style.borderColor = '#ffffff';
+          markerEl.style.transform = 'scale(1.5)';
+          markerEl.style.boxShadow = '0 0 15px #d97706';
+          markerEl.style.zIndex = '1000';
+          markersRef.current[index].openPopup();
+        } else if (index < currentStep) {
+          // Vergangenheit
+          markerEl.style.backgroundColor = '#78350f'; // amber-900
+          markerEl.style.borderColor = '#451a03';
+          markerEl.style.transform = 'scale(1.0)';
+          markerEl.style.boxShadow = 'none';
+        } else {
+          // Zukunft
+          markerEl.style.backgroundColor = '#1e293b'; // slate-800
+          markerEl.style.borderColor = '#334155';
+          markerEl.style.transform = 'scale(0.8)';
+          markerEl.style.boxShadow = 'none';
+          markersRef.current[index].closePopup();
+        }
+      }
+    });
+
+  }, [currentStep]);
+
+
+  // --- UI HANDLERS ---
+  const handleNext = () => {
+    if (!isLast) setCurrentStep(prev => prev + 1);
+  };
+
+  const handlePrev = () => {
+    if (!isFirst) setCurrentStep(prev => prev - 1);
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-amber-900 selection:text-white">
+      
+      {/* HEADER */}
+      <header className="flex-none z-20 bg-slate-950/90 border-b border-amber-900/30 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-2xl">
+        <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-br from-amber-600 to-amber-800 p-2 rounded shadow-lg shadow-amber-900/20">
+            <Scroll className="text-slate-950 w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500" style={{ fontFamily: '"Cinzel", serif' }}>
+              ITER MARCI AURELII
+            </h1>
+            <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Die Reise nach der Usurpation</p>
+          </div>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-xs text-slate-600 border border-slate-800 px-3 py-1 rounded-full">
+          <Info size={14} />
+          <span>Basierend auf Historia Augusta & Cassius Dio</span>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT SPLIT */}
+      <div className="flex-1 flex flex-col md:flex-row relative">
+        
+        {/* LEFT PANEL: NARRATIVE */}
+        <div className="w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r border-amber-900/20 flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1">
+          
+          {/* Progress Bar */}
+          <div className="h-1 w-full bg-slate-800">
+            <motion.div 
+              className="h-full bg-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.5)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${((currentStep + 1) / JOURNEY_DATA.length) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={data.id}
+                initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
+                transition={{ duration: 0.5, ease: "circOut" }}
+                className="space-y-6"
+              >
+                {/* Meta Info */}
+                <div className="flex items-center gap-3 text-amber-500/80 text-sm font-bold tracking-widest uppercase">
+                  <span className="flex items-center gap-1"><MapPin size={14} /> Station {data.id}/{JOURNEY_DATA.length}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                  <span>{data.date}</span>
+                </div>
+
+                {/* Title */}
+                <h2 className="text-3xl md:text-3xl text-amber-50 leading-tight" style={{ fontFamily: '"Cinzel", serif' }}>
+                  {data.title}
+                </h2>
+
+                {/* Location */}
+                <div className="inline-block px-3 py-1 bg-slate-800/50 rounded text-slate-400 text-sm border border-slate-700/50">
+                  📍 {data.location}
+                </div>
+
+                {/* Main Text */}
+                <p className="text-base md:text-lg text-slate-300 leading-relaxed font-light" style={{ fontFamily: '"Lato", sans-serif' }}>
+                  {data.text}
+                </p>
+
+                {/* Quote Block */}
+                <div className="relative mt-8 p-6 bg-slate-950 rounded-lg border border-amber-900/30 group hover:border-amber-700/50 transition-colors duration-500">
+                  <div className="absolute -top-3 left-4 bg-slate-900 px-2 text-amber-600">
+                    <BookOpen size={20} />
+                  </div>
+                  <blockquote className="italic text-slate-400 font-serif text-base leading-relaxed">
+                    "{data.quote}"
+                  </blockquote>
+                  <div className="mt-4 text-right text-xs text-amber-700 font-bold uppercase tracking-wider">
+                    — {data.source}
+                  </div>
+                </div>
+
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Controls */}
+          <div className="p-4 md:p-6 bg-slate-950 border-t border-slate-800 flex gap-4 mt-auto">
+            <button
+              onClick={handlePrev}
+              disabled={isFirst}
+              className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
+                ${isFirst 
+                  ? 'opacity-30 cursor-not-allowed text-slate-500' 
+                  : 'hover:bg-slate-800 text-amber-100 border border-slate-700 hover:border-amber-700'
+                }`}
+            >
+              <ChevronLeft size={16} /> <span className="hidden md:inline">Zurück</span>
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={isLast}
+              className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
+                ${isLast
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  : 'bg-amber-700 hover:bg-amber-600 text-slate-950 font-bold shadow-[0_0_20px_rgba(180,83,9,0.3)] hover:shadow-[0_0_30px_rgba(180,83,9,0.5)]'
+                }`}
+            >
+              {isLast ? 'Ende' : 'Weiter'} <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: MAP */}
+        <div className="flex-1 relative bg-slate-900 z-0 h-1/2 md:h-auto order-1 md:order-2">
+          {/* Map Container */}
+          <div id="map" ref={mapContainerRef} className="w-full h-full bg-[#020617]"></div>
+
+          {/* Map Overlay Vignette */}
+          <div className="absolute inset-0 z-[401] pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.4)_100%)] shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
+          
+          {/* Decorative Elements on Map */}
+          <div className="absolute top-8 right-8 z-[402] hidden md:block opacity-50 pointer-events-none">
+            <div className="w-32 h-32 border border-amber-500/20 rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
+              <div className="w-24 h-24 border border-slate-500/20 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
