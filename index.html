@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, ChevronRight, ChevronLeft, MapPin, Scroll, Info } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, MapPin, Scroll, Info, Layers, Anchor, PenTool } from 'lucide-react';
 
-// --- DATENBASIS ---
-const JOURNEY_DATA = [
+// --- DATEN: MARC AUREL (Gold/Amber) ---
+const MARC_AUREL_DATA = [
   {
     id: 1,
     title: "Der Aufbruch im Norden",
@@ -96,32 +96,195 @@ const JOURNEY_DATA = [
   }
 ];
 
+// --- DATEN: PLINIUS (Cyan/Teal) ---
+const PLINIUS_DATA = [
+  {
+    id: 1,
+    title: "Stürmische Überfahrt",
+    location: "Kap Malea / Ägäis",
+    coords: [36.43, 23.20],
+    date: "ca. 111 n. Chr.",
+    text: "Plinius berichtet Trajan von seiner harten Seereise. Er segelt um Kap Malea und wird durch widrige Winde ('contrariis ventis') aufgehalten. Er entscheidet sich, teils mit Küstenschiffen, teils mit Wagen weiterzureisen.",
+    quote: "Melde ich Dir, daß ich mit allen meinen Leuten zu Schiff an Kap Malea vorbei [...] nach Ephesus gelangt bin.",
+    source: "Plinius, Epist. X, 15"
+  },
+  {
+    id: 2,
+    title: "Ankunft in Asien",
+    location: "Ephesus",
+    coords: [37.94, 27.34],
+    date: "September",
+    text: "Ankunft in der Metropole Ephesus. Von hier aus plant er die Weiterreise in seine Provinz Bithynien. Die Hitze macht ihm zu schaffen, weshalb er zwischen Schiff und Wagen wechselt.",
+    quote: "Herr, wenn mir die Seereise bis Ephesus sehr gut bekommen ist...",
+    source: "Plinius, Epist. X, 17a"
+  },
+  {
+    id: 3,
+    title: "Krankheit auf dem Weg",
+    location: "Pergamum",
+    coords: [39.12, 27.18],
+    date: "September",
+    text: "Die Reise im Wagen bei großer Hitze verursacht Fieberanfälle. Plinius muss in Pergamum eine Pause einlegen. Als er auf Küstenschiffe umsteigt, halten ihn Gegenwinde erneut auf.",
+    quote: "...habe ich, seit ich im Wagen reise, sehr unter der drückenden Hitze [...] gelitten und deshalb in Pergamum haltgemacht.",
+    source: "Plinius, Epist. X, 17a"
+  },
+  {
+    id: 4,
+    title: "Ankunft in der Provinz",
+    location: "Bithynien / Prusa",
+    coords: [40.18, 29.06],
+    date: "17. September",
+    text: "Plinius trifft endlich in seiner Provinz ein und beginnt sofort in Prusa mit der Arbeit: Er prüft die Finanzen der Stadt. Er entdeckt Unregelmäßigkeiten und fordert einen Baumeister an.",
+    quote: "Zur Zeit prüfe ich die Ausgaben, Einnahmen und Außenstände in Prusa.",
+    source: "Plinius, Epist. X, 17a"
+  },
+  {
+    id: 5,
+    title: "Die Bauruine",
+    location: "Nicomedia",
+    coords: [40.76, 29.92],
+    date: "Winter 111/112 n. Chr.",
+    text: "In Nicomedia inspiziert Plinius eine gescheiterte Wasserleitung, die Millionen Sesterzen verschlungen hat und dennoch unfertig ist. Er bittet Trajan dringend um einen Wasseringenieur.",
+    quote: "Herr, für eine Wasserleitung haben die Nicomedenser 3.318.000 Sestertien verausgabt, aber sie ist bis jetzt unvollendet.",
+    source: "Plinius, Epist. X, 37"
+  },
+  {
+    id: 6,
+    title: "Das sinkende Theater",
+    location: "Nicaea",
+    coords: [40.43, 29.72],
+    date: "112 n. Chr.",
+    text: "In Nicaea findet er ein Theater vor, das sich wegen weichen Bodens senkt und Risse bekommt, obwohl bereits 10 Millionen Sesterzen investiert wurden. Ein weiteres Beispiel für Misswirtschaft.",
+    quote: "Herr, das Theater in Nicaea [...] hat [...] mehr als 10 Mill. verschlungen; ich fürchte, für nichts und wieder nichts.",
+    source: "Plinius, Epist. X, 39"
+  },
+  {
+    id: 7,
+    title: "Ein Bad im Sumpf",
+    location: "Claudiopolis",
+    coords: [40.85, 31.15], // Wahrscheinlich Bolu
+    date: "112 n. Chr.",
+    text: "Die Claudiopolitaner bauen ein riesiges Bad in einer Niederung, die von einem Berg überragt wird. Plinius fürchtet, dass auch hier öffentliche Gelder verschwendet werden.",
+    quote: "Auch die Claudiopolitaner bauen oder genauer gesagt graben ein gewaltiges Bad in einer Niederung.",
+    source: "Plinius, Epist. X, 39"
+  },
+  {
+    id: 8,
+    title: "Rechnungsprüfung in Europa",
+    location: "Byzanz (Byzantium)",
+    coords: [41.00, 28.95],
+    date: "112 n. Chr.",
+    text: "Plinius revidiert die Ausgaben in Byzanz. Er streicht die Kosten für einen Gesandten, der jährlich nur eine Ehrenadresse nach Rom bringen sollte, um Geld zu sparen.",
+    quote: "Als ich in Byzanz die Ausgaben revidierte [...] habe ich es für richtig gehalten, auf den Gesandten zu verzichten.",
+    source: "Plinius, Epist. X, 43"
+  },
+  {
+    id: 9,
+    title: "Widerstand der Städte",
+    location: "Apamea",
+    coords: [40.37, 28.88],
+    date: "112 n. Chr.",
+    text: "In Apamea weigern sich die Bürger zunächst, ihre Bücher offenzulegen, unter Berufung auf alte Privilegien. Plinius fragt Trajan um Rat, wie er verfahren soll.",
+    quote: "Herr, als ich mich in Apamea [...] orientieren wollte, bekam ich die Antwort, sie alle wünschten zwar, daß ich in ihre Abrechnungen Einblick erhielte, doch habe es noch nie ein Statthalter verlangt.",
+    source: "Plinius, Epist. X, 47"
+  },
+  {
+    id: 10,
+    title: "Wasser für Sinope",
+    location: "Sinope",
+    coords: [42.02, 35.15],
+    date: "112/113 n. Chr.",
+    text: "Sinope leidet unter Wassermangel. Plinius schlägt vor, Wasser aus 16 Meilen Entfernung heranzuführen, muss aber erst prüfen lassen, ob der Boden das Gewicht des Aquädukts trägt.",
+    quote: "Herr, die Sinopenser leiden Mangel an Wasser, aber es scheint gut und reichlich [...] herangeführt werden zu können.",
+    source: "Plinius, Epist. X, 90"
+  },
+  {
+    id: 11,
+    title: "Die Christenfrage",
+    location: "Amisus / Pontus",
+    coords: [41.28, 36.33],
+    date: "112/113 n. Chr.",
+    text: "Hier (oder in der Region) verfasst Plinius seinen berühmten Brief über die Christen. Er ist unsicher, wie er mit ihnen verfahren soll, da er 'nichts als einen wüsten Aberglauben' fand.",
+    quote: "Gerichtsverhandlungen gegen Christen habe ich noch nie beigewohnt; deshalb weiß ich nicht, was und wieweit man zu strafen [...] pflegt.",
+    source: "Plinius, Epist. X, 96"
+  }
+];
+
+// --- GEOJSON PLATZHALTER (Bleibt gleich) ---
+const PLACEHOLDER_GEOJSON = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Bithynia et Pontus (Plinius Provinz)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [29.0, 40.0], [32.0, 40.0], [36.0, 41.0], [38.0, 41.0], [36.0, 42.0], [30.0, 41.5], [29.0, 41.0], [29.0, 40.0]
+        ]]
+      }
+    }
+  ]
+};
+
 export default function App() {
+  const [activeRoute, setActiveRoute] = useState('marc'); // 'marc' oder 'plinius'
   const [currentStep, setCurrentStep] = useState(0);
+  const [showBorders, setShowBorders] = useState(true);
+  
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const geoJsonLayerRef = useRef(null);
+  const polylineRef = useRef(null); // Ref für die Verbindungslinie
 
-  const data = JOURNEY_DATA[currentStep];
-  const isLast = currentStep === JOURNEY_DATA.length - 1;
+  // Wähle Daten basierend auf Route
+  const activeData = activeRoute === 'marc' ? MARC_AUREL_DATA : PLINIUS_DATA;
+  const data = activeData[currentStep];
+  const isLast = currentStep === activeData.length - 1;
   const isFirst = currentStep === 0;
 
+  // --- THEME COLORS ---
+  // Wir definieren ein Farb-Objekt für jede Route, um Styles dynamisch anzupassen
+  const theme = activeRoute === 'marc' ? {
+    primary: 'amber', // Tailwind name prefix
+    primaryHex: '#d97706', // amber-600
+    darkHex: '#78350f', // amber-900
+    lightHex: '#fcd34d', // amber-300
+    gradientFrom: 'from-amber-600',
+    gradientTo: 'to-amber-800',
+    selectionBg: 'selection:bg-amber-900',
+    icon: <Scroll className="text-slate-950 w-6 h-6" />,
+    title: "ITER MARCI AURELII",
+    subtitle: "Die Reise nach der Usurpation"
+  } : {
+    primary: 'cyan',
+    primaryHex: '#06b6d4', // cyan-500
+    darkHex: '#155e75', // cyan-800
+    lightHex: '#67e8f9', // cyan-300
+    gradientFrom: 'from-cyan-600',
+    gradientTo: 'to-cyan-800',
+    selectionBg: 'selection:bg-cyan-900',
+    icon: <PenTool className="text-slate-950 w-6 h-6" />, // Plinius war Schriftsteller/Verwalter
+    title: "ITER PLINII",
+    subtitle: "Reise in die Provinz Bithynien"
+  };
+
   // --- LEAFLET INITIALIZATION ---
-  // Wir laden Leaflet manuell, um Build-Fehler mit 'react-leaflet' zu vermeiden
   useEffect(() => {
-    // 1. CSS laden
+    // CSS laden
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
 
-    // 2. Fonts laden
+    // Fonts laden
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap';
     document.head.appendChild(fontLink);
 
-    // 3. Script laden und Map initialisieren
+    // Leaflet laden
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.async = true;
@@ -131,17 +294,16 @@ export default function App() {
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, []);
+  }, []); // Run once on mount
 
   const initMap = () => {
     if (!window.L || !mapContainerRef.current) return;
-    if (mapInstanceRef.current) return; // Bereits initialisiert
+    if (mapInstanceRef.current) return;
 
     const L = window.L;
 
@@ -149,7 +311,7 @@ export default function App() {
     const map = L.map(mapContainerRef.current, {
       zoomControl: false,
       attributionControl: false
-    }).setView([44.97, 19.61], 5);
+    }).setView([40.0, 25.0], 5); // Zentraler Startpunkt
 
     mapInstanceRef.current = map;
 
@@ -160,15 +322,34 @@ export default function App() {
       maxZoom: 19
     }).addTo(map);
 
-    // Marker erstellen
-    JOURNEY_DATA.forEach((stop, index) => {
-      // Custom DivIcon für CSS-Styling
+    updateMapContent(); // Initialen Content laden
+  };
+
+  // --- UPDATE MAP CONTENT (Markers & Lines) ---
+  // Diese Funktion wird aufgerufen, wenn sich die Route (activeRoute) ändert
+  const updateMapContent = () => {
+    if (!mapInstanceRef.current || !window.L) return;
+    const L = window.L;
+    const map = mapInstanceRef.current;
+
+    // 1. Alte Marker entfernen
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    // 2. Alte Polyline entfernen
+    if (polylineRef.current) {
+        polylineRef.current.remove();
+        polylineRef.current = null;
+    }
+
+    // 3. Neue Marker setzen
+    activeData.forEach((stop, index) => {
       const icon = L.divIcon({
-        className: 'custom-marker-icon', // Klasse ist egal, wir stylen das HTML
+        className: 'custom-marker-icon',
         html: `<div id="marker-${index}" style="
           width: 24px;
           height: 24px;
-          background-color: ${index === 0 ? '#f59e0b' : '#334155'};
+          background-color: ${index === 0 ? theme.primaryHex : '#334155'};
           border: 2px solid ${index === 0 ? '#fff' : '#475569'};
           border-radius: 50%;
           transition: all 0.5s ease;
@@ -187,21 +368,18 @@ export default function App() {
 
       const marker = L.marker(stop.coords, { icon }).addTo(map);
       
-      // Popup binden
       const popupContent = `
         <div style="font-family: 'Cinzel', serif; text-align: center;">
-          <strong style="color: #d97706; font-size: 14px;">${stop.title}</strong><br/>
+          <strong style="color: ${theme.primaryHex}; font-size: 14px;">${stop.title}</strong><br/>
           <span style="color: #94a3b8; font-size: 11px;">${stop.date}</span>
         </div>
       `;
       
-      // Popup Styling via CSS-Klasse im Leaflet-Kontext ist schwer, daher inline styles im string
       marker.bindPopup(popupContent, {
         closeButton: false,
         className: 'custom-leaflet-popup' 
       });
 
-      // Klick Event
       marker.on('click', () => {
         setCurrentStep(index);
       });
@@ -209,62 +387,143 @@ export default function App() {
       markersRef.current[index] = marker;
     });
 
-    // Style-Fixes für Leaflet Popups
-    const style = document.createElement('style');
-    style.innerHTML = `
+    // 4. Verbindungslinie zeichnen
+    const latlngs = activeData.map(d => d.coords);
+    const polyline = L.polyline(latlngs, {
+        color: theme.primaryHex,
+        weight: 2,
+        opacity: 0.3,
+        dashArray: '5, 10',
+        smoothFactor: 1
+    }).addTo(map);
+    polylineRef.current = polyline;
+
+    // 5. GeoJSON Update (Optional: Man könnte verschiedene Grenzen für verschiedene Epochen laden)
+    // Hier nutzen wir dieselben Grenzen, passen aber die Farbe an
+    if (geoJsonLayerRef.current) geoJsonLayerRef.current.remove();
+    
+    const borderStyle = {
+      color: theme.primaryHex,
+      weight: 1.5,
+      opacity: 0.8,
+      fillColor: theme.primaryHex,
+      fillOpacity: 0.05,
+      dashArray: '5, 8',
+      lineCap: 'round'
+    };
+
+    const geoJsonLayer = L.geoJSON(PLACEHOLDER_GEOJSON, {
+      style: borderStyle,
+      onEachFeature: (feature, layer) => {
+        if (feature.properties && feature.properties.name) {
+          layer.bindTooltip(feature.properties.name, {
+            permanent: false,
+            direction: 'center',
+            className: 'custom-leaflet-tooltip' 
+          });
+        }
+      }
+    });
+    
+    geoJsonLayerRef.current = geoJsonLayer;
+    if (showBorders) geoJsonLayer.addTo(map);
+
+    // 6. Tooltip Style anpassen (CSS Variablen Hack oder direct style injection update)
+    const styleId = 'leaflet-custom-styles';
+    let styleEl = document.getElementById(styleId);
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        document.head.appendChild(styleEl);
+    }
+    
+    styleEl.innerHTML = `
       .leaflet-popup-content-wrapper {
-        background: #0f172a; /* slate-900 */
-        border: 1px solid #78350f; /* amber-900 */
+        background: #0f172a;
+        border: 1px solid ${theme.darkHex};
         border-radius: 4px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
       }
       .leaflet-popup-tip {
         background: #0f172a;
-        border-left: 1px solid #78350f; /* amber-900 */
-        border-top: 1px solid #78350f; /* amber-900 */
+        border-left: 1px solid ${theme.darkHex};
+        border-top: 1px solid ${theme.darkHex};
       }
       .leaflet-container {
         background: #020617;
       }
+      .custom-leaflet-tooltip {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid ${theme.primaryHex};
+        color: ${theme.lightHex};
+        font-family: 'Cinzel', serif;
+        font-size: 10px;
+        border-radius: 2px;
+        box-shadow: none;
+      }
+      .leaflet-tooltip-left::before { border-left-color: ${theme.primaryHex}; }
+      .leaflet-tooltip-right::before { border-right-color: ${theme.primaryHex}; }
     `;
-    document.head.appendChild(style);
+
+    // 7. Reset View zum Start der neuen Route
+    map.flyTo(activeData[0].coords, 6, {
+        animate: true,
+        duration: 1.5
+    });
+    
+    // Reset step
+    setCurrentStep(0);
   };
 
-  // --- EFFECT: Update Map on Step Change ---
+  // --- EFFECT: Route Wechsel ---
+  useEffect(() => {
+    updateMapContent();
+  }, [activeRoute]);
+
+  // --- EFFECT: Toggle Borders ---
+  useEffect(() => {
+      if (!mapInstanceRef.current || !geoJsonLayerRef.current) return;
+      if (showBorders) {
+          geoJsonLayerRef.current.addTo(mapInstanceRef.current);
+      } else {
+          geoJsonLayerRef.current.remove();
+      }
+  }, [showBorders]);
+
+  // --- EFFECT: Step Update (Animation & Marker Highlight) ---
   useEffect(() => {
     if (!mapInstanceRef.current || !window.L) return;
-    
     const map = mapInstanceRef.current;
-    const currentCoords = JOURNEY_DATA[currentStep].coords;
-
-    // 1. Kamerafahrt
-    map.flyTo(currentCoords, 6, {
+    
+    // Fly to location
+    map.flyTo(activeData[currentStep].coords, 6, {
       animate: true,
       duration: 2.0,
       easeLinearity: 0.25
     });
 
-    // 2. Marker Styles aktualisieren
-    JOURNEY_DATA.forEach((_, index) => {
+    // Update Markers Visuals
+    activeData.forEach((_, index) => {
       const markerEl = document.getElementById(`marker-${index}`);
-      if (markerEl) {
+      if (markerEl && markersRef.current[index]) {
         if (index === currentStep) {
-          // Aktiv
-          markerEl.style.backgroundColor = '#d97706'; // amber-600
+          // ACTIVE
+          markerEl.style.backgroundColor = theme.primaryHex;
           markerEl.style.borderColor = '#ffffff';
           markerEl.style.transform = 'scale(1.5)';
-          markerEl.style.boxShadow = '0 0 15px #d97706';
+          markerEl.style.boxShadow = `0 0 15px ${theme.primaryHex}`;
           markerEl.style.zIndex = '1000';
           markersRef.current[index].openPopup();
         } else if (index < currentStep) {
-          // Vergangenheit
-          markerEl.style.backgroundColor = '#78350f'; // amber-900
-          markerEl.style.borderColor = '#451a03';
+          // PAST
+          markerEl.style.backgroundColor = theme.darkHex;
+          markerEl.style.borderColor = '#000';
           markerEl.style.transform = 'scale(1.0)';
           markerEl.style.boxShadow = 'none';
+          markersRef.current[index].closePopup();
         } else {
-          // Zukunft
-          markerEl.style.backgroundColor = '#1e293b'; // slate-800
+          // FUTURE
+          markerEl.style.backgroundColor = '#1e293b';
           markerEl.style.borderColor = '#334155';
           markerEl.style.transform = 'scale(0.8)';
           markerEl.style.boxShadow = 'none';
@@ -272,38 +531,69 @@ export default function App() {
         }
       }
     });
-
-  }, [currentStep]);
-
+  }, [currentStep, activeData, theme]); // Re-run when step or data/theme changes
 
   // --- UI HANDLERS ---
-  const handleNext = () => {
-    if (!isLast) setCurrentStep(prev => prev + 1);
-  };
-
-  const handlePrev = () => {
-    if (!isFirst) setCurrentStep(prev => prev - 1);
-  };
+  const handleNext = () => { if (!isLast) setCurrentStep(prev => prev + 1); };
+  const handlePrev = () => { if (!isFirst) setCurrentStep(prev => prev - 1); };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-amber-900 selection:text-white">
+    <div className={`flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans ${theme.selectionBg}`}>
       
       {/* HEADER */}
-      <header className="flex-none z-20 bg-slate-950/90 border-b border-amber-900/30 backdrop-blur-md px-6 py-4 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="bg-gradient-to-br from-amber-600 to-amber-800 p-2 rounded shadow-lg shadow-amber-900/20">
-            <Scroll className="text-slate-950 w-6 h-6" />
-          </div>
+      <header className="flex-none z-20 bg-slate-950/90 border-b border-white/10 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row items-center justify-between shadow-2xl gap-4">
+        
+        {/* Title Area */}
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <motion.div 
+            key={activeRoute}
+            initial={{ rotate: -90, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            className={`bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo} p-2 rounded shadow-lg shadow-black/50`}
+          >
+            {theme.icon}
+          </motion.div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500" style={{ fontFamily: '"Cinzel", serif' }}>
-              ITER MARCI AURELII
-            </h1>
-            <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Die Reise nach der Usurpation</p>
+            <motion.h1 
+              key={theme.title}
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className={`text-xl md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${activeRoute === 'marc' ? 'from-amber-200 to-amber-500' : 'from-cyan-200 to-cyan-500'}`} 
+              style={{ fontFamily: '"Cinzel", serif' }}
+            >
+              {theme.title}
+            </motion.h1>
+            <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">{theme.subtitle}</p>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 text-xs text-slate-600 border border-slate-800 px-3 py-1 rounded-full">
-          <Info size={14} />
-          <span>Basierend auf Historia Augusta & Cassius Dio</span>
+        
+        {/* Controls Area */}
+        <div className="flex items-center gap-4">
+            
+            {/* Route Switcher */}
+            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
+                <button
+                    onClick={() => setActiveRoute('marc')}
+                    className={`px-4 py-2 rounded text-xs uppercase tracking-wider font-bold transition-all ${activeRoute === 'marc' ? 'bg-amber-700 text-white shadow-lg' : 'text-slate-500 hover:text-amber-500'}`}
+                >
+                    Marc Aurel
+                </button>
+                <button
+                    onClick={() => setActiveRoute('plinius')}
+                    className={`px-4 py-2 rounded text-xs uppercase tracking-wider font-bold transition-all ${activeRoute === 'plinius' ? 'bg-cyan-700 text-white shadow-lg' : 'text-slate-500 hover:text-cyan-500'}`}
+                >
+                    Plinius
+                </button>
+            </div>
+
+            {/* Toggle Borders */}
+            <button 
+                onClick={() => setShowBorders(!showBorders)}
+                className={`hidden md:flex items-center gap-2 px-3 py-2 rounded text-xs uppercase tracking-wider transition-colors border ${showBorders ? `bg-slate-800 border-${theme.primary}-700 text-${theme.primary}-500` : 'bg-slate-900 border-slate-700 text-slate-500'}`}
+                style={{ borderColor: showBorders ? theme.darkHex : '', color: showBorders ? theme.lightHex : '' }}
+            >
+                <Layers size={14} />
+            </button>
         </div>
       </header>
 
@@ -311,14 +601,15 @@ export default function App() {
       <div className="flex-1 flex flex-col md:flex-row relative">
         
         {/* LEFT PANEL: NARRATIVE */}
-        <div className="w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r border-amber-900/20 flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1">
+        <div className={`w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1 transition-colors duration-500`} style={{ borderColor: `${theme.darkHex}40` }}> // 40 is hex opacity
           
           {/* Progress Bar */}
           <div className="h-1 w-full bg-slate-800">
             <motion.div 
-              className="h-full bg-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.5)]"
+              className="h-full shadow-[0_0_10px_currentColor]"
+              style={{ backgroundColor: theme.primaryHex, color: theme.primaryHex }}
               initial={{ width: 0 }}
-              animate={{ width: `${((currentStep + 1) / JOURNEY_DATA.length) * 100}%` }}
+              animate={{ width: `${((currentStep + 1) / activeData.length) * 100}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
@@ -326,7 +617,7 @@ export default function App() {
           <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
             <AnimatePresence mode="wait">
               <motion.div
-                key={data.id}
+                key={`${activeRoute}-${data.id}`}
                 initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
                 animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
@@ -334,14 +625,14 @@ export default function App() {
                 className="space-y-6"
               >
                 {/* Meta Info */}
-                <div className="flex items-center gap-3 text-amber-500/80 text-sm font-bold tracking-widest uppercase">
-                  <span className="flex items-center gap-1"><MapPin size={14} /> Station {data.id}/{JOURNEY_DATA.length}</span>
+                <div className="flex items-center gap-3 text-sm font-bold tracking-widest uppercase transition-colors" style={{ color: theme.lightHex }}>
+                  <span className="flex items-center gap-1"><MapPin size={14} /> Station {data.id}/{activeData.length}</span>
                   <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                   <span>{data.date}</span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-3xl md:text-3xl text-amber-50 leading-tight" style={{ fontFamily: '"Cinzel", serif' }}>
+                <h2 className="text-3xl md:text-3xl text-slate-100 leading-tight" style={{ fontFamily: '"Cinzel", serif' }}>
                   {data.title}
                 </h2>
 
@@ -356,14 +647,14 @@ export default function App() {
                 </p>
 
                 {/* Quote Block */}
-                <div className="relative mt-8 p-6 bg-slate-950 rounded-lg border border-amber-900/30 group hover:border-amber-700/50 transition-colors duration-500">
-                  <div className="absolute -top-3 left-4 bg-slate-900 px-2 text-amber-600">
+                <div className="relative mt-8 p-6 bg-slate-950 rounded-lg border group transition-colors duration-500" style={{ borderColor: `${theme.darkHex}80` }}>
+                  <div className="absolute -top-3 left-4 bg-slate-900 px-2" style={{ color: theme.primaryHex }}>
                     <BookOpen size={20} />
                   </div>
                   <blockquote className="italic text-slate-400 font-serif text-base leading-relaxed">
                     "{data.quote}"
                   </blockquote>
-                  <div className="mt-4 text-right text-xs text-amber-700 font-bold uppercase tracking-wider">
+                  <div className="mt-4 text-right text-xs font-bold uppercase tracking-wider" style={{ color: theme.darkHex }}>
                     — {data.source}
                   </div>
                 </div>
@@ -380,8 +671,12 @@ export default function App() {
               className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
                 ${isFirst 
                   ? 'opacity-30 cursor-not-allowed text-slate-500' 
-                  : 'hover:bg-slate-800 text-amber-100 border border-slate-700 hover:border-amber-700'
+                  : `hover:bg-slate-800 border border-slate-700`
                 }`}
+              style={{ 
+                  borderColor: isFirst ? '' : theme.darkHex, 
+                  color: isFirst ? '' : theme.lightHex 
+              }}
             >
               <ChevronLeft size={16} /> <span className="hidden md:inline">Zurück</span>
             </button>
@@ -391,8 +686,12 @@ export default function App() {
               className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
                 ${isLast
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'bg-amber-700 hover:bg-amber-600 text-slate-950 font-bold shadow-[0_0_20px_rgba(180,83,9,0.3)] hover:shadow-[0_0_30px_rgba(180,83,9,0.5)]'
+                  : 'text-slate-950 font-bold shadow-lg'
                 }`}
+              style={{ 
+                  backgroundColor: isLast ? '' : theme.primaryHex,
+                  boxShadow: isLast ? '' : `0 0 20px ${theme.darkHex}`
+              }}
             >
               {isLast ? 'Ende' : 'Weiter'} <ChevronRight size={16} />
             </button>
@@ -401,18 +700,10 @@ export default function App() {
 
         {/* RIGHT PANEL: MAP */}
         <div className="flex-1 relative bg-slate-900 z-0 h-1/2 md:h-auto order-1 md:order-2">
-          {/* Map Container */}
           <div id="map" ref={mapContainerRef} className="w-full h-full bg-[#020617]"></div>
 
-          {/* Map Overlay Vignette */}
+          {/* Vignette */}
           <div className="absolute inset-0 z-[401] pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.4)_100%)] shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
-          
-          {/* Decorative Elements on Map */}
-          <div className="absolute top-8 right-8 z-[402] hidden md:block opacity-50 pointer-events-none">
-            <div className="w-32 h-32 border border-amber-500/20 rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
-              <div className="w-24 h-24 border border-slate-500/20 rounded-full"></div>
-            </div>
-          </div>
         </div>
 
       </div>
