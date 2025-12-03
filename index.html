@@ -1,696 +1,404 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, ChevronRight, ChevronLeft, MapPin, Scroll, Info, Layers, Anchor, PenTool } from 'lucide-react';
-
-// --- DATEN: MARC AUREL (Gold/Amber) ---
-const MARC_AUREL_DATA = [
-  {
-    id: 1,
-    title: "Der Aufbruch im Norden",
-    location: "Sirmium / Pannonien",
-    coords: [44.97, 19.61],
-    date: "175 n. Chr.",
-    text: "Marc Aurel plant, das Markomannen- und Sarmatenland endgültig zur Provinz zu machen. Doch die Nachricht vom Usurpationsversuch des Avidius Cassius im Osten zwingt ihn zum Abbruch. Er schließt eilig Frieden mit den Jazygen.",
-    quote: "So gab denn Marcus den Sarmaten- und Markomannenkrieg auf und zog gegen Cassius.",
-    source: "Historia Augusta, MA 25,1"
-  },
-  {
-    id: 2,
-    title: "Marsch durch Syrien",
-    location: "Syrien",
-    coords: [34.80, 38.99],
-    date: "Ende 175 n. Chr.",
-    text: "Der Kaiser reist mit seiner Frau Faustina und Sohn Commodus in den Osten. Noch bevor sie eintreffen, wird der Usurpator Cassius von einem eigenen Centurio getötet. Marc Aurel weigert sich, das Haupt des Feindes zu sehen.",
-    quote: "Er hatte die Absicht [...] reiste er mit seinem Vater nach Syrien und Ägypten.",
-    source: "Historia Augusta, C 2,3"
-  },
-  {
-    id: 3,
-    title: "Vergebung in Antiochia",
-    location: "Antiochia am Orontes",
-    coords: [36.20, 36.16],
-    date: "176 n. Chr.",
-    text: "Antiochia war das Zentrum des Aufstands. Anfangs mied Marc Aurel die Stadt und verbot öffentliche Schauspiele. Später besuchte er sie doch und zeigte Milde, indem er den Einwohnern verzieh.",
-    quote: "Hinterher hat er doch noch Antiochia besucht. [...] Er verzieh auch den Städten.",
-    source: "Historia Augusta, MA 25,8-26"
-  },
-  {
-    id: 4,
-    title: "Der Philosoph in Ägypten",
-    location: "Alexandria",
-    coords: [31.20, 29.91],
-    date: "176 n. Chr.",
-    text: "In Alexandria tritt der Kaiser als 'Bürger und Philosoph' auf. Er besucht Tempel und Lehrstätten. Er lässt die Korrespondenz des Cassius verbrennen, ohne sie zu lesen, um niemanden bestrafen zu müssen.",
-    quote: "Bei den Ägyptern gab er sich [...] als Bürger und Philosoph.",
-    source: "Historia Augusta, MA 26,3"
-  },
-  {
-    id: 5,
-    title: "Tod der Faustina",
-    location: "Halala (Faustinopolis)",
-    coords: [37.35, 34.90],
-    date: "176 n. Chr.",
-    text: "Auf der Rückreise stirbt Kaiserin Faustina in einem Dorf in Kappadokien. Marc Aurel trauert tief, lässt sie zur Göttin erheben und benennt den Ort in 'Faustinopolis' um.",
-    quote: "Zur nämlichen Zeit schied auch Faustina aus dem Leben.",
-    source: "Cassius Dio 72, 29,1"
-  },
-  {
-    id: 6,
-    title: "Einweihung in Athen",
-    location: "Athen",
-    coords: [37.98, 23.72],
-    date: "Herbst 176 n. Chr.",
-    text: "In Athen lässt sich Marc Aurel in die Eleusinischen Mysterien einweihen, um seine rituelle Reinheit zu beweisen. Er stiftet Lehrstühle für Philosophie.",
-    quote: "Nach der Regelung der Angelegenheiten im Osten hielt er sich in Athen auf.",
-    source: "Historia Augusta, MA 27,1"
-  },
-  {
-    id: 7,
-    title: "Rückkehr als Zivilist",
-    location: "Brundisium",
-    coords: [40.63, 17.94],
-    date: "176 n. Chr.",
-    text: "Bei der Landung in Italien legt er sofort den Feldherrenmantel ab und legt die Toga an. Auch seine Soldaten müssen Zivil tragen.",
-    quote: "Über Brundisium in Italien eingetroffen, legte er [...] selbst die Toga an.",
-    source: "Historia Augusta, MA 27,3"
-  },
-  {
-    id: 8,
-    title: "Triumph in der Hauptstadt",
-    location: "Rom",
-    coords: [41.90, 12.49],
-    date: "Dezember 176 n. Chr.",
-    text: "Marc Aurel feiert einen Triumphzug über die Germanen und Sarmaten. Commodus wird zum Mitregenten ernannt.",
-    quote: "In Rom zog er in Triumph ein.",
-    source: "Historia Augusta, MA 27,4"
-  },
-  {
-    id: 9,
-    title: "Pilgerfahrt zu den Ursprüngen",
-    location: "Lavinium",
-    coords: [41.66, 12.48],
-    date: "176/177 n. Chr.",
-    text: "Zum Abschluss reist er ins nahe Lavinium, die legendäre Gründungsstadt des Aeneas.",
-    quote: "Und reiste dort nach Lavinium.",
-    source: "Historia Augusta, MA 27,4"
-  }
-];
-
-// --- DATEN: PLINIUS (Cyan/Teal) ---
-const PLINIUS_DATA = [
-  {
-    id: 1,
-    title: "Stürmische Überfahrt",
-    location: "Kap Malea / Ägäis",
-    coords: [36.43, 23.20],
-    date: "ca. 111 n. Chr.",
-    text: "Plinius berichtet Trajan von seiner harten Seereise. Er segelt um Kap Malea und wird durch widrige Winde ('contrariis ventis') aufgehalten. Er entscheidet sich, teils mit Küstenschiffen, teils mit Wagen weiterzureisen.",
-    quote: "Melde ich Dir, daß ich mit allen meinen Leuten zu Schiff an Kap Malea vorbei [...] nach Ephesus gelangt bin.",
-    source: "Plinius, Epist. X, 15"
-  },
-  {
-    id: 2,
-    title: "Ankunft in Asien",
-    location: "Ephesus",
-    coords: [37.94, 27.34],
-    date: "September",
-    text: "Ankunft in der Metropole Ephesus. Von hier aus plant er die Weiterreise in seine Provinz Bithynien. Die Hitze macht ihm zu schaffen, weshalb er zwischen Schiff und Wagen wechselt.",
-    quote: "Herr, wenn mir die Seereise bis Ephesus sehr gut bekommen ist...",
-    source: "Plinius, Epist. X, 17a"
-  },
-  {
-    id: 3,
-    title: "Krankheit auf dem Weg",
-    location: "Pergamum",
-    coords: [39.12, 27.18],
-    date: "September",
-    text: "Die Reise im Wagen bei großer Hitze verursacht Fieberanfälle. Plinius muss in Pergamum eine Pause einlegen. Als er auf Küstenschiffe umsteigt, halten ihn Gegenwinde erneut auf.",
-    quote: "...habe ich, seit ich im Wagen reise, sehr unter der drückenden Hitze [...] gelitten und deshalb in Pergamum haltgemacht.",
-    source: "Plinius, Epist. X, 17a"
-  },
-  {
-    id: 4,
-    title: "Ankunft in der Provinz",
-    location: "Bithynien / Prusa",
-    coords: [40.18, 29.06],
-    date: "17. September",
-    text: "Plinius trifft endlich in seiner Provinz ein und beginnt sofort in Prusa mit der Arbeit: Er prüft die Finanzen der Stadt. Er entdeckt Unregelmäßigkeiten und fordert einen Baumeister an.",
-    quote: "Zur Zeit prüfe ich die Ausgaben, Einnahmen und Außenstände in Prusa.",
-    source: "Plinius, Epist. X, 17a"
-  },
-  {
-    id: 5,
-    title: "Die Bauruine",
-    location: "Nicomedia",
-    coords: [40.76, 29.92],
-    date: "Winter 111/112 n. Chr.",
-    text: "In Nicomedia inspiziert Plinius eine gescheiterte Wasserleitung, die Millionen Sesterzen verschlungen hat und dennoch unfertig ist. Er bittet Trajan dringend um einen Wasseringenieur.",
-    quote: "Herr, für eine Wasserleitung haben die Nicomedenser 3.318.000 Sestertien verausgabt, aber sie ist bis jetzt unvollendet.",
-    source: "Plinius, Epist. X, 37"
-  },
-  {
-    id: 6,
-    title: "Das sinkende Theater",
-    location: "Nicaea",
-    coords: [40.43, 29.72],
-    date: "112 n. Chr.",
-    text: "In Nicaea findet er ein Theater vor, das sich wegen weichen Bodens senkt und Risse bekommt, obwohl bereits 10 Millionen Sesterzen investiert wurden. Ein weiteres Beispiel für Misswirtschaft.",
-    quote: "Herr, das Theater in Nicaea [...] hat [...] mehr als 10 Mill. verschlungen; ich fürchte, für nichts und wieder nichts.",
-    source: "Plinius, Epist. X, 39"
-  },
-  {
-    id: 7,
-    title: "Ein Bad im Sumpf",
-    location: "Claudiopolis",
-    coords: [40.85, 31.15], // Wahrscheinlich Bolu
-    date: "112 n. Chr.",
-    text: "Die Claudiopolitaner bauen ein riesiges Bad in einer Niederung, die von einem Berg überragt wird. Plinius fürchtet, dass auch hier öffentliche Gelder verschwendet werden.",
-    quote: "Auch die Claudiopolitaner bauen oder genauer gesagt graben ein gewaltiges Bad in einer Niederung.",
-    source: "Plinius, Epist. X, 39"
-  },
-  {
-    id: 8,
-    title: "Rechnungsprüfung in Europa",
-    location: "Byzanz (Byzantium)",
-    coords: [41.00, 28.95],
-    date: "112 n. Chr.",
-    text: "Plinius revidiert die Ausgaben in Byzanz. Er streicht die Kosten für einen Gesandten, der jährlich nur eine Ehrenadresse nach Rom bringen sollte, um Geld zu sparen.",
-    quote: "Als ich in Byzanz die Ausgaben revidierte [...] habe ich es für richtig gehalten, auf den Gesandten zu verzichten.",
-    source: "Plinius, Epist. X, 43"
-  },
-  {
-    id: 9,
-    title: "Widerstand der Städte",
-    location: "Apamea",
-    coords: [40.37, 28.88],
-    date: "112 n. Chr.",
-    text: "In Apamea weigern sich die Bürger zunächst, ihre Bücher offenzulegen, unter Berufung auf alte Privilegien. Plinius fragt Trajan um Rat, wie er verfahren soll.",
-    quote: "Herr, als ich mich in Apamea [...] orientieren wollte, bekam ich die Antwort, sie alle wünschten zwar, daß ich in ihre Abrechnungen Einblick erhielte, doch habe es noch nie ein Statthalter verlangt.",
-    source: "Plinius, Epist. X, 47"
-  },
-  {
-    id: 10,
-    title: "Wasser für Sinope",
-    location: "Sinope",
-    coords: [42.02, 35.15],
-    date: "112/113 n. Chr.",
-    text: "Sinope leidet unter Wassermangel. Plinius schlägt vor, Wasser aus 16 Meilen Entfernung heranzuführen, muss aber erst prüfen lassen, ob der Boden das Gewicht des Aquädukts trägt.",
-    quote: "Herr, die Sinopenser leiden Mangel an Wasser, aber es scheint gut und reichlich [...] herangeführt werden zu können.",
-    source: "Plinius, Epist. X, 90"
-  },
-  {
-    id: 11,
-    title: "Die Christenfrage",
-    location: "Amisus / Pontus",
-    coords: [41.28, 36.33],
-    date: "112/113 n. Chr.",
-    text: "Hier (oder in der Region) verfasst Plinius seinen berühmten Brief über die Christen. Er ist unsicher, wie er mit ihnen verfahren soll, da er 'nichts als einen wüsten Aberglauben' fand.",
-    quote: "Gerichtsverhandlungen gegen Christen habe ich noch nie beigewohnt; deshalb weiß ich nicht, was und wieweit man zu strafen [...] pflegt.",
-    source: "Plinius, Epist. X, 96"
-  }
-];
-
-// --- GEOJSON PLATZHALTER ---
-const PLACEHOLDER_GEOJSON = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": { "name": "Bithynia et Pontus (Plinius Provinz)" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [29.0, 40.0], [32.0, 40.0], [36.0, 41.0], [38.0, 41.0], [36.0, 42.0], [30.0, 41.5], [29.0, 41.0], [29.0, 40.0]
-        ]]
-      }
-    }
-  ]
-};
-
-export default function App() {
-  const [activeRoute, setActiveRoute] = useState('marc'); 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [showBorders, setShowBorders] = useState(true);
-  
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const markersRef = useRef([]);
-  const geoJsonLayerRef = useRef(null);
-  const polylineRef = useRef(null); 
-
-  const activeData = activeRoute === 'marc' ? MARC_AUREL_DATA : PLINIUS_DATA;
-  const data = activeData[currentStep];
-  const isLast = currentStep === activeData.length - 1;
-  const isFirst = currentStep === 0;
-
-  // --- THEME COLORS ---
-  const theme = activeRoute === 'marc' ? {
-    primary: 'amber',
-    primaryHex: '#d97706',
-    darkHex: '#78350f',
-    lightHex: '#fcd34d',
-    gradientFrom: 'from-amber-600',
-    gradientTo: 'to-amber-800',
-    selectionBg: 'selection:bg-amber-900',
-    icon: <Scroll className="text-slate-950 w-6 h-6" />,
-    title: "ITER MARCI AURELII",
-    subtitle: "Die Reise nach der Usurpation"
-  } : {
-    primary: 'cyan',
-    primaryHex: '#06b6d4',
-    darkHex: '#155e75',
-    lightHex: '#67e8f9',
-    gradientFrom: 'from-cyan-600',
-    gradientTo: 'to-cyan-800',
-    selectionBg: 'selection:bg-cyan-900',
-    icon: <PenTool className="text-slate-950 w-6 h-6" />,
-    title: "ITER PLINII",
-    subtitle: "Reise in die Provinz Bithynien"
-  };
-
-  // --- LEAFLET INITIALIZATION ---
-  useEffect(() => {
-    // 1. CSS laden (WICHTIG für Rendering)
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-
-    // 2. Fonts laden
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap';
-    document.head.appendChild(fontLink);
-
-    // 3. Leaflet JS laden
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.async = true;
-    script.onload = () => {
-      initMap();
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, []);
-
-  const initMap = () => {
-    if (!window.L || !mapContainerRef.current) return;
-    if (mapInstanceRef.current) return;
-
-    const L = window.L;
-
-    // Karte erstellen (Mit Attribution und Zoom!)
-    const map = L.map(mapContainerRef.current, {
-      zoomControl: true, // Aktiviert die +/- Buttons
-      attributionControl: true // Zeigt "Leaflet" Link unten rechts
-    }).setView([40.0, 25.0], 5);
-
-    mapInstanceRef.current = map;
-
-    // Tile Layer (Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(map);
-
-    updateMapContent();
-  };
-
-  const updateMapContent = () => {
-    if (!mapInstanceRef.current || !window.L) return;
-    const L = window.L;
-    const map = mapInstanceRef.current;
-
-    // Marker säubern
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
-
-    // Polyline säubern
-    if (polylineRef.current) {
-        polylineRef.current.remove();
-        polylineRef.current = null;
-    }
-
-    // Neue Marker
-    activeData.forEach((stop, index) => {
-      const icon = L.divIcon({
-        className: 'custom-marker-icon',
-        html: `<div id="marker-${index}" style="
-          width: 24px;
-          height: 24px;
-          background-color: ${index === 0 ? theme.primaryHex : '#334155'};
-          border: 2px solid ${index === 0 ? '#fff' : '#475569'};
-          border-radius: 50%;
-          transition: all 0.5s ease;
-          box-shadow: 0 0 10px rgba(0,0,0,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-family: 'Lato', sans-serif;
-          font-weight: bold;
-          font-size: 12px;
-        ">${index + 1}</div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-      });
-
-      const marker = L.marker(stop.coords, { icon }).addTo(map);
-      
-      const popupContent = `
-        <div style="font-family: 'Cinzel', serif; text-align: center;">
-          <strong style="color: ${theme.primaryHex}; font-size: 14px;">${stop.title}</strong><br/>
-          <span style="color: #94a3b8; font-size: 11px;">${stop.date}</span>
-        </div>
-      `;
-      
-      marker.bindPopup(popupContent, {
-        closeButton: false,
-        className: 'custom-leaflet-popup' 
-      });
-
-      marker.on('click', () => {
-        setCurrentStep(index);
-      });
-
-      markersRef.current[index] = marker;
-    });
-
-    // Verbindungslinie
-    const latlngs = activeData.map(d => d.coords);
-    const polyline = L.polyline(latlngs, {
-        color: theme.primaryHex,
-        weight: 2,
-        opacity: 0.3,
-        dashArray: '5, 10',
-        smoothFactor: 1
-    }).addTo(map);
-    polylineRef.current = polyline;
-
-    // GeoJSON
-    if (geoJsonLayerRef.current) geoJsonLayerRef.current.remove();
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbis Terrarum - Die Antike Welt</title>
     
-    const borderStyle = {
-      color: theme.primaryHex,
-      weight: 1.5,
-      opacity: 0.8,
-      fillColor: theme.primaryHex,
-      fillOpacity: 0.05,
-      dashArray: '5, 8',
-      lineCap: 'round'
-    };
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Google Fonts: Cinzel (Römisch) & Lato (Lesbar) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    const geoJsonLayer = L.geoJSON(PLACEHOLDER_GEOJSON, {
-      style: borderStyle,
-      onEachFeature: (feature, layer) => {
-        if (feature.properties && feature.properties.name) {
-          layer.bindTooltip(feature.properties.name, {
-            permanent: false,
-            direction: 'center',
-            className: 'custom-leaflet-tooltip' 
-          });
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        antiquity: {
+                            base: '#fdfbf7',     /* Helles Pergament */
+                            paper: '#f0e6d2',    /* Dunkleres Pergament */
+                            gold: '#c5a059',     /* Goldakzente (Marc Aurel) */
+                            copper: '#4d8076',   /* Kupfer/Patina (Plinius) */
+                            red: '#8a2c2c',      /* Römisches Rot */
+                            dark: '#2c241b',     /* Dunkle Schrift */
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Cinzel', 'serif'],
+                        body: ['Lato', 'sans-serif'],
+                    }
+                }
+            }
         }
-      }
-    });
-    
-    geoJsonLayerRef.current = geoJsonLayer;
-    if (showBorders) geoJsonLayer.addTo(map);
+    </script>
 
-    // CSS Update für Popups und Tooltips
-    const styleId = 'leaflet-custom-styles';
-    let styleEl = document.getElementById(styleId);
-    if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        document.head.appendChild(styleEl);
-    }
-    
-    styleEl.innerHTML = `
-      .leaflet-popup-content-wrapper {
-        background: #0f172a;
-        border: 1px solid ${theme.darkHex};
-        border-radius: 4px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
-      }
-      .leaflet-popup-tip {
-        background: #0f172a;
-        border-left: 1px solid ${theme.darkHex};
-        border-top: 1px solid ${theme.darkHex};
-      }
-      .leaflet-container {
-        background: #020617;
-      }
-      .custom-leaflet-tooltip {
-        background: rgba(15, 23, 42, 0.9);
-        border: 1px solid ${theme.primaryHex};
-        color: ${theme.lightHex};
-        font-family: 'Cinzel', serif;
-        font-size: 10px;
-        border-radius: 2px;
-        box-shadow: none;
-      }
-      .leaflet-tooltip-left::before { border-left-color: ${theme.primaryHex}; }
-      .leaflet-tooltip-right::before { border-right-color: ${theme.primaryHex}; }
-    `;
-
-    map.flyTo(activeData[0].coords, 6, {
-        animate: true,
-        duration: 1.5
-    });
-    
-    setCurrentStep(0);
-  };
-
-  useEffect(() => {
-    updateMapContent();
-  }, [activeRoute]);
-
-  useEffect(() => {
-      if (!mapInstanceRef.current || !geoJsonLayerRef.current) return;
-      if (showBorders) {
-          geoJsonLayerRef.current.addTo(mapInstanceRef.current);
-      } else {
-          geoJsonLayerRef.current.remove();
-      }
-  }, [showBorders]);
-
-  useEffect(() => {
-    if (!mapInstanceRef.current || !window.L) return;
-    const map = mapInstanceRef.current;
-    
-    map.flyTo(activeData[currentStep].coords, 6, {
-      animate: true,
-      duration: 2.0,
-      easeLinearity: 0.25
-    });
-
-    activeData.forEach((_, index) => {
-      const markerEl = document.getElementById(`marker-${index}`);
-      if (markerEl && markersRef.current[index]) {
-        if (index === currentStep) {
-          markerEl.style.backgroundColor = theme.primaryHex;
-          markerEl.style.borderColor = '#ffffff';
-          markerEl.style.transform = 'scale(1.5)';
-          markerEl.style.boxShadow = `0 0 15px ${theme.primaryHex}`;
-          markerEl.style.zIndex = '1000';
-          markersRef.current[index].openPopup();
-        } else if (index < currentStep) {
-          markerEl.style.backgroundColor = theme.darkHex;
-          markerEl.style.borderColor = '#000';
-          markerEl.style.transform = 'scale(1.0)';
-          markerEl.style.boxShadow = 'none';
-          markersRef.current[index].closePopup();
-        } else {
-          markerEl.style.backgroundColor = '#1e293b';
-          markerEl.style.borderColor = '#334155';
-          markerEl.style.transform = 'scale(0.8)';
-          markerEl.style.boxShadow = 'none';
-          markersRef.current[index].closePopup();
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f0e6d2; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        
+        /* Popup Styling */
+        .leaflet-popup-content-wrapper {
+            background: #fdfbf7;
+            border: 2px solid #c5a059;
+            border-radius: 4px;
+            font-family: 'Lato', sans-serif;
+            box-shadow: 4px 4px 0px rgba(44, 36, 27, 0.2);
+            padding: 0;
         }
-      }
-    });
-  }, [currentStep, activeData, theme]);
+        .leaflet-popup-content { margin: 12px; }
+        .leaflet-popup-tip { background: #c5a059; }
+        .leaflet-container a.leaflet-popup-close-button { color: #8a2c2c; }
 
-  const handleNext = () => { if (!isLast) setCurrentStep(prev => prev + 1); };
-  const handlePrev = () => { if (!isFirst) setCurrentStep(prev => prev - 1); };
+        /* Marker Styles */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 12px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease;
+        }
+        .custom-marker:hover {
+            transform: scale(1.2);
+        }
 
-  return (
-    <div className={`flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans ${theme.selectionBg}`}>
-      
-      {/* HEADER */}
-      <header className="flex-none z-20 bg-slate-950/90 border-b border-white/10 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row items-center justify-between shadow-2xl gap-4">
-        
-        {/* Title Area */}
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <motion.div 
-            key={activeRoute}
-            initial={{ rotate: -90, opacity: 0 }}
-            animate={{ rotate: 0, opacity: 1 }}
-            className={`bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo} p-2 rounded shadow-lg shadow-black/50`}
-          >
-            {theme.icon}
-          </motion.div>
-          <div>
-            <motion.h1 
-              key={theme.title}
-              initial={{ y: -10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className={`text-xl md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${activeRoute === 'marc' ? 'from-amber-200 to-amber-500' : 'from-cyan-200 to-cyan-500'}`} 
-              style={{ fontFamily: '"Cinzel", serif' }}
-            >
-              {theme.title}
-            </motion.h1>
-            <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">{theme.subtitle}</p>
-          </div>
-        </div>
-        
-        {/* Controls Area */}
-        <div className="flex items-center gap-4">
+        /* Selection */
+        ::selection { background: #8a2c2c; color: #fdfbf7; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-antiquity-base text-antiquity-dark font-body min-h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-antiquity-dark text-antiquity-base shadow-lg border-b-4 border-antiquity-gold z-20 relative transition-colors duration-500" id="main-header">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             
-            {/* Route Switcher */}
-            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
-                <button
-                    onClick={() => setActiveRoute('marc')}
-                    className={`px-4 py-2 rounded text-xs uppercase tracking-wider font-bold transition-all ${activeRoute === 'marc' ? 'bg-amber-700 text-white shadow-lg' : 'text-slate-500 hover:text-amber-500'}`}
-                >
-                    Marc Aurel
-                </button>
-                <button
-                    onClick={() => setActiveRoute('plinius')}
-                    className={`px-4 py-2 rounded text-xs uppercase tracking-wider font-bold transition-all ${activeRoute === 'plinius' ? 'bg-cyan-700 text-white shadow-lg' : 'text-slate-500 hover:text-cyan-500'}`}
-                >
-                    Plinius
-                </button>
+            <!-- Logo -->
+            <div class="flex items-center space-x-3">
+                <i data-lucide="column" class="text-antiquity-gold h-8 w-8"></i>
+                <div>
+                    <h1 class="font-heading text-2xl tracking-widest font-bold text-antiquity-gold">ORBIS TERRARUM</h1>
+                    <p class="text-xs text-gray-400 tracking-wider uppercase">Reisen der Kaiserzeit</p>
+                </div>
             </div>
 
-            {/* Toggle Borders */}
-            <button 
-                onClick={() => setShowBorders(!showBorders)}
-                className={`hidden md:flex items-center gap-2 px-3 py-2 rounded text-xs uppercase tracking-wider transition-colors border ${showBorders ? `bg-slate-800 border-${theme.primary}-700 text-${theme.primary}-500` : 'bg-slate-900 border-slate-700 text-slate-500'}`}
-                style={{ borderColor: showBorders ? theme.darkHex : '', color: showBorders ? theme.lightHex : '' }}
-            >
-                <Layers size={14} />
-            </button>
+            <!-- Route Switcher Navigation -->
+            <nav class="flex bg-antiquity-paper/10 rounded-lg p-1 border border-antiquity-gold/30">
+                <button onclick="switchRoute('marc')" id="btn-marc" class="px-6 py-2 rounded font-heading text-sm tracking-widest transition-all bg-antiquity-gold text-antiquity-dark shadow-lg">
+                    ITER MARCI
+                </button>
+                <button onclick="switchRoute('plinius')" id="btn-plinius" class="px-6 py-2 rounded font-heading text-sm tracking-widest transition-all text-gray-400 hover:text-antiquity-copper">
+                    ITER PLINII
+                </button>
+            </nav>
         </div>
-      </header>
+    </header>
 
-      {/* MAIN CONTENT SPLIT */}
-      <div className="flex-1 flex flex-col md:flex-row relative">
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col md:flex-row h-[calc(100vh-80px)]">
         
-        {/* LEFT PANEL: NARRATIVE */}
-        <div className={`w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1 transition-colors duration-500`} style={{ borderColor: `${theme.darkHex}40` }}> 
-          
-          {/* Progress Bar */}
-          <div className="h-1 w-full bg-slate-800">
-            <motion.div 
-              className="h-full shadow-[0_0_10px_currentColor]"
-              style={{ backgroundColor: theme.primaryHex, color: theme.primaryHex }}
-              initial={{ width: 0 }}
-              animate={{ width: `${((currentStep + 1) / activeData.length) * 100}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
+        <!-- Sidebar / Details Panel -->
+        <aside class="w-full md:w-1/3 lg:w-[400px] bg-antiquity-paper border-r border-antiquity-gold/30 flex flex-col shadow-2xl z-10 relative">
+            
+            <!-- Panel Header -->
+            <div class="p-6 border-b border-antiquity-gold/20 bg-antiquity-base">
+                <h2 id="panel-title" class="font-heading text-2xl text-antiquity-gold mb-1">Willkommen</h2>
+                <div class="flex items-center space-x-2 text-antiquity-red text-sm font-bold uppercase tracking-wider opacity-80">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span id="loc-region">Wähle eine Route</span>
+                </div>
+            </div>
+            
+            <!-- Panel Content -->
+            <div class="flex-grow overflow-y-auto p-6 space-y-6 relative">
+                
+                <!-- Dynamic Content Area -->
+                <div id="location-details" class="hidden animate-fade-in">
+                    
+                    <!-- Image Placeholder (using Unsplash source based on keywords) -->
+                    <div class="relative w-full h-48 mb-6 overflow-hidden rounded border-2 border-antiquity-gold shadow-md group">
+                         <img id="loc-img" src="" alt="Location" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
+                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                         <div class="absolute bottom-3 left-3 text-white font-heading text-sm" id="loc-date">Datum</div>
+                    </div>
+                    
+                    <!-- Main Text -->
+                    <div class="prose prose-sm prose-stone">
+                        <p id="loc-text" class="text-base leading-relaxed text-antiquity-dark">
+                            <!-- Description goes here -->
+                        </p>
+                    </div>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeRoute}-${data.id}`}
-                initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                transition={{ duration: 0.5, ease: "circOut" }}
-                className="space-y-6"
-              >
-                {/* Meta Info */}
-                <div className="flex items-center gap-3 text-sm font-bold tracking-widest uppercase transition-colors" style={{ color: theme.lightHex }}>
-                  <span className="flex items-center gap-1"><MapPin size={14} /> Station {data.id}/{activeData.length}</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                  <span>{data.date}</span>
+                    <!-- Quote Block -->
+                    <div class="mt-8 relative pl-6 border-l-4 border-antiquity-gold/50 italic text-antiquity-dark/80 bg-antiquity-base/50 p-4 rounded-r">
+                        <i data-lucide="quote" class="absolute -top-3 left-2 w-6 h-6 text-antiquity-gold fill-current opacity-20"></i>
+                        <p id="loc-quote" class="font-serif text-lg">...</p>
+                        <p id="loc-source" class="text-xs text-right mt-2 font-bold uppercase text-antiquity-red tracking-wider">Quelle</p>
+                    </div>
+
                 </div>
 
-                {/* Title */}
-                <h2 className="text-3xl md:text-3xl text-slate-100 leading-tight" style={{ fontFamily: '"Cinzel", serif' }}>
-                  {data.title}
-                </h2>
-
-                {/* Location */}
-                <div className="inline-block px-3 py-1 bg-slate-800/50 rounded text-slate-400 text-sm border border-slate-700/50">
-                  📍 {data.location}
+                <!-- Empty State -->
+                <div id="empty-state" class="text-center opacity-60 mt-20 flex flex-col items-center">
+                    <div class="w-20 h-20 rounded-full bg-antiquity-gold/10 flex items-center justify-center mb-4 border border-antiquity-gold/30">
+                        <i data-lucide="compass" class="w-10 h-10 text-antiquity-gold"></i>
+                    </div>
+                    <p class="font-heading text-lg text-antiquity-dark">Wähle eine Station<br>auf der Karte</p>
+                    <p class="text-sm mt-2 max-w-xs mx-auto">Klicke auf die nummerierten Marker, um Details zur Reise zu erfahren.</p>
                 </div>
+            </div>
 
-                {/* Main Text */}
-                <p className="text-base md:text-lg text-slate-300 leading-relaxed font-light" style={{ fontFamily: '"Lato", sans-serif' }}>
-                  {data.text}
-                </p>
+            <!-- Navigation Footer in Sidebar -->
+            <div class="p-4 bg-antiquity-base border-t border-antiquity-gold/20 flex justify-between items-center text-xs text-gray-400">
+                <span>Historia Augusta & Cassius Dio</span>
+                <span>Plinius Epistulae</span>
+            </div>
+        </aside>
 
-                {/* Quote Block */}
-                <div className="relative mt-8 p-6 bg-slate-950 rounded-lg border group transition-colors duration-500" style={{ borderColor: `${theme.darkHex}80` }}>
-                  <div className="absolute -top-3 left-4 bg-slate-900 px-2" style={{ color: theme.primaryHex }}>
-                    <BookOpen size={20} />
-                  </div>
-                  <blockquote className="italic text-slate-400 font-serif text-base leading-relaxed">
-                    "{data.quote}"
-                  </blockquote>
-                  <div className="mt-4 text-right text-xs font-bold uppercase tracking-wider" style={{ color: theme.darkHex }}>
-                    — {data.source}
-                  </div>
-                </div>
-
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Controls */}
-          <div className="p-4 md:p-6 bg-slate-950 border-t border-slate-800 flex gap-4 mt-auto">
-            <button
-              onClick={handlePrev}
-              disabled={isFirst}
-              className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
-                ${isFirst 
-                  ? 'opacity-30 cursor-not-allowed text-slate-500' 
-                  : `hover:bg-slate-800 border border-slate-700`
-                }`}
-              style={{ 
-                  borderColor: isFirst ? '' : theme.darkHex, 
-                  color: isFirst ? '' : theme.lightHex 
-              }}
-            >
-              <ChevronLeft size={16} /> <span className="hidden md:inline">Zurück</span>
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={isLast}
-              className={`flex-1 py-3 md:py-4 px-4 rounded flex items-center justify-center gap-2 transition-all duration-300 font-serif tracking-widest uppercase text-xs md:text-sm
-                ${isLast
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'text-slate-950 font-bold shadow-lg'
-                }`}
-              style={{ 
-                  backgroundColor: isLast ? '' : theme.primaryHex,
-                  boxShadow: isLast ? '' : `0 0 20px ${theme.darkHex}`
-              }}
-            >
-              {isLast ? 'Ende' : 'Weiter'} <ChevronRight size={16} />
-            </button>
-          </div>
+        <!-- Map Container -->
+        <div class="flex-grow relative bg-[#e5e0d8]">
+            <div id="map" class="w-full h-full z-0"></div>
+            <!-- Vignette Overlay for antique feel -->
+            <div class="pointer-events-none absolute inset-0 z-[400] bg-[radial-gradient(circle_at_center,transparent_20%,rgba(44,36,27,0.15)_100%)]"></div>
         </div>
 
-        {/* RIGHT PANEL: MAP */}
-        <div className="flex-1 relative bg-slate-900 z-0 h-1/2 md:h-auto order-1 md:order-2">
-          <div id="map" ref={mapContainerRef} className="w-full h-full bg-[#020617]"></div>
+    </main>
 
-          {/* Vignette */}
-          <div className="absolute inset-0 z-[401] pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.4)_100%)] shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]"></div>
-        </div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-      </div>
-    </div>
-  );
-}
+    <script>
+        // --- 1. DATASETS ---
+        
+        const MARC_AUREL_DATA = [
+            { id: 1, name: "Sirmium / Donau", lat: 44.97, lng: 19.61, region: "Pannonien", date: "175 n. Chr.", desc: "Marc Aurel plant, das Markomannen- und Sarmatenland endgültig zur Provinz zu machen. Doch die Nachricht vom Usurpationsversuch des Avidius Cassius im Osten zwingt ihn zum Abbruch.", quote: "So gab denn Marcus den Sarmaten- und Markomannenkrieg auf und zog gegen Cassius.", source: "Historia Augusta, MA 25,1" },
+            { id: 2, name: "Syrien (Marsch)", lat: 34.80, lng: 38.99, region: "Syria", date: "Ende 175 n. Chr.", desc: "Der Kaiser reist mit seiner Frau Faustina und Sohn Commodus in den Osten. Noch bevor sie eintreffen, wird der Usurpator Cassius von einem eigenen Centurio getötet.", quote: "Er hatte die Absicht [...] reiste er mit seinem Vater nach Syrien und Ägypten.", source: "Historia Augusta, C 2,3" },
+            { id: 3, name: "Antiochia", lat: 36.20, lng: 36.16, region: "Syria", date: "176 n. Chr.", desc: "Antiochia war das Zentrum des Aufstands. Anfangs mied Marc Aurel die Stadt und verbot öffentliche Schauspiele. Später besuchte er sie doch und zeigte Milde.", quote: "Hinterher hat er doch noch Antiochia besucht. [...] Er verzieh auch den Städten.", source: "HA, MA 25,8-26" },
+            { id: 4, name: "Alexandria", lat: 31.20, lng: 29.91, region: "Aegyptus", date: "176 n. Chr.", desc: "In Alexandria tritt der Kaiser als 'Bürger und Philosoph' auf. Er besucht Tempel und Lehrstätten und lässt die belastende Korrespondenz des Cassius verbrennen.", quote: "Bei den Ägyptern gab er sich [...] als Bürger und Philosoph.", source: "HA, MA 26,3" },
+            { id: 5, name: "Faustinopolis", lat: 37.35, lng: 34.90, region: "Cappadocia", date: "176 n. Chr.", desc: "Auf der Rückreise stirbt Kaiserin Faustina in einem Dorf in Kappadokien. Marc Aurel trauert tief und benennt den Ort in 'Faustinopolis' um.", quote: "Zur nämlichen Zeit schied auch Faustina aus dem Leben.", source: "Cassius Dio 72, 29,1" },
+            { id: 6, name: "Athen", lat: 37.98, lng: 23.72, region: "Achaea", date: "Herbst 176 n. Chr.", desc: "In Athen lässt sich Marc Aurel in die Eleusinischen Mysterien einweihen, um seine rituelle Reinheit zu beweisen.", quote: "Nach der Regelung der Angelegenheiten im Osten hielt er sich in Athen auf.", source: "HA, MA 27,1" },
+            { id: 7, name: "Brundisium", lat: 40.63, lng: 17.94, region: "Italia", date: "176 n. Chr.", desc: "Bei der Landung in Italien legt er sofort den Feldherrenmantel ab und legt die Toga an. Auch seine Soldaten müssen Zivil tragen.", quote: "Über Brundisium in Italien eingetroffen, legte er [...] selbst die Toga an.", source: "HA, MA 27,3" },
+            { id: 8, name: "Rom", lat: 41.90, lng: 12.49, region: "Italia", date: "Dez. 176 n. Chr.", desc: "Marc Aurel feiert einen Triumphzug über die Germanen und Sarmaten. Commodus wird zum Mitregenten ernannt.", quote: "In Rom zog er in Triumph ein.", source: "HA, MA 27,4" },
+            { id: 9, name: "Lavinium", lat: 41.66, lng: 12.48, region: "Latium", date: "177 n. Chr.", desc: "Zum Abschluss reist er ins nahe Lavinium, die legendäre Gründungsstadt des Aeneas.", quote: "Und reiste dort nach Lavinium.", source: "HA, MA 27,4" }
+        ];
+
+        const PLINIUS_DATA = [
+            { id: 1, name: "Kap Malea", lat: 36.43, lng: 23.20, region: "Ägäis", date: "ca. 111 n. Chr.", desc: "Plinius berichtet Trajan von seiner harten Seereise. Er segelt um Kap Malea und wird durch widrige Winde aufgehalten.", quote: "Melde ich Dir, daß ich mit allen meinen Leuten zu Schiff an Kap Malea vorbei [...] gelangt bin.", source: "Plinius, Epist. X, 15" },
+            { id: 2, name: "Ephesus", lat: 37.94, lng: 27.34, region: "Asia", date: "September", desc: "Ankunft in der Metropole Ephesus. Die Hitze macht ihm zu schaffen, weshalb er zwischen Schiff und Wagen wechselt.", quote: "Herr, wenn mir die Seereise bis Ephesus sehr gut bekommen ist...", source: "Plinius, Epist. X, 17a" },
+            { id: 3, name: "Pergamum", lat: 39.12, lng: 27.18, region: "Asia", date: "September", desc: "Die Reise im Wagen bei großer Hitze verursacht Fieberanfälle. Plinius muss in Pergamum eine Pause einlegen.", quote: "...habe ich [...] sehr unter der drückenden Hitze gelitten.", source: "Plinius, Epist. X, 17a" },
+            { id: 4, name: "Prusa", lat: 40.18, lng: 29.06, region: "Bithynia", date: "17. Sept.", desc: "Plinius trifft in seiner Provinz ein und prüft die Finanzen. Er entdeckt Unregelmäßigkeiten und fordert einen Baumeister an.", quote: "Zur Zeit prüfe ich die Ausgaben, Einnahmen und Außenstände in Prusa.", source: "Plinius, Epist. X, 17a" },
+            { id: 5, name: "Nicomedia", lat: 40.76, lng: 29.92, region: "Bithynia", date: "Winter 111/112", desc: "Plinius inspiziert eine gescheiterte Wasserleitung, die Millionen Sesterzen verschlungen hat und dennoch unfertig ist.", quote: "Herr, für eine Wasserleitung haben die Nicomedenser 3.318.000 Sestertien verausgabt...", source: "Plinius, Epist. X, 37" },
+            { id: 6, name: "Nicaea", lat: 40.43, lng: 29.72, region: "Bithynia", date: "112 n. Chr.", desc: "In Nicaea findet er ein Theater vor, das sich wegen weichen Bodens senkt und Risse bekommt.", quote: "Herr, das Theater in Nicaea [...] hat [...] mehr als 10 Mill. verschlungen.", source: "Plinius, Epist. X, 39" },
+            { id: 7, name: "Claudiopolis", lat: 40.85, lng: 31.15, region: "Bithynia", date: "112 n. Chr.", desc: "Die Bürger bauen ein riesiges Bad in einer sumpfigen Niederung. Plinius fürchtet Geldverschwendung.", quote: "Auch die Claudiopolitaner bauen [...] ein gewaltiges Bad in einer Niederung.", source: "Plinius, Epist. X, 39" },
+            { id: 8, name: "Byzantium", lat: 41.00, lng: 28.95, region: "Thracia", date: "112 n. Chr.", desc: "Plinius streicht die Kosten für einen Gesandten, der jährlich nur eine Ehrenadresse nach Rom bringen sollte.", quote: "Als ich in Byzanz die Ausgaben revidierte [...] habe ich es für richtig gehalten, auf den Gesandten zu verzichten.", source: "Plinius, Epist. X, 43" },
+            { id: 9, name: "Sinope", lat: 42.02, lng: 35.15, region: "Pontus", date: "112/113 n. Chr.", desc: "Sinope leidet unter Wassermangel. Plinius schlägt ein Aquädukt vor.", quote: "Herr, die Sinopenser leiden Mangel an Wasser.", source: "Plinius, Epist. X, 90" },
+            { id: 10, name: "Amisus", lat: 41.28, lng: 36.33, region: "Pontus", date: "112/113 n. Chr.", desc: "Hier verfasst Plinius seinen berühmten Brief über die Christenverhöre.", quote: "Gerichtsverhandlungen gegen Christen habe ich noch nie beigewohnt...", source: "Plinius, Epist. X, 96" }
+        ];
+
+        // --- 2. CONFIG & STATE ---
+        let map;
+        let currentLayers = [];
+        let currentPolyline = null;
+        let activeRoute = 'marc';
+
+        const CONFIG = {
+            marc: {
+                color: '#c5a059', // antiquity-gold
+                bgClass: 'bg-antiquity-gold',
+                textClass: 'text-antiquity-gold',
+                borderClass: 'border-antiquity-gold',
+                title: 'Iter Marci Aurelii'
+            },
+            plinius: {
+                color: '#4d8076', // antiquity-copper
+                bgClass: 'bg-[#4d8076]',
+                textClass: 'text-[#4d8076]',
+                borderClass: 'border-[#4d8076]',
+                title: 'Iter Plinii'
+            }
+        };
+
+        // --- 3. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Map
+            // Center on Mediterranean, customized tiles
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: true
+            }).setView([38.0, 24.0], 6);
+
+            // Add Zoom Control top-right
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            // CartoDB Voyager (lighter, paper-like feel) or Dark Matter?
+            // User requested "Classic" view, so a light map fits the parchment theme better.
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add Labels separately to have them on top (optional, improves legibility)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxZoom: 19,
+                opacity: 0.6
+            }).addTo(map);
+
+            // Init Icons
+            lucide.createIcons();
+
+            // Load Default Route
+            switchRoute('marc');
+        });
+
+        // --- 4. LOGIC ---
+
+        function switchRoute(routeKey) {
+            activeRoute = routeKey;
+            const data = routeKey === 'marc' ? MARC_AUREL_DATA : PLINIUS_DATA;
+            const theme = CONFIG[routeKey];
+
+            // 1. Update UI Buttons
+            const btnMarc = document.getElementById('btn-marc');
+            const btnPlin = document.getElementById('btn-plinius');
+
+            if (routeKey === 'marc') {
+                btnMarc.className = `px-6 py-2 rounded font-heading text-sm tracking-widest transition-all shadow-lg ${CONFIG.marc.bgClass} text-antiquity-dark scale-105`;
+                btnPlin.className = `px-6 py-2 rounded font-heading text-sm tracking-widest transition-all text-gray-400 hover:text-antiquity-copper`;
+            } else {
+                btnMarc.className = `px-6 py-2 rounded font-heading text-sm tracking-widest transition-all text-gray-400 hover:text-antiquity-gold`;
+                btnPlin.className = `px-6 py-2 rounded font-heading text-sm tracking-widest transition-all shadow-lg ${CONFIG.plinius.bgClass} text-white scale-105`;
+            }
+
+            // 2. Clear Map
+            currentLayers.forEach(layer => map.removeLayer(layer));
+            currentLayers = [];
+            if (currentPolyline) map.removeLayer(currentPolyline);
+
+            // 3. Draw Polyline
+            const latlngs = data.map(d => [d.lat, d.lng]);
+            currentPolyline = L.polyline(latlngs, {
+                color: theme.color,
+                weight: 2,
+                opacity: 0.6,
+                dashArray: '5, 10',
+                className: 'animate-pulse' // Subtle pulse
+            }).addTo(map);
+            
+            // 4. Draw Markers
+            data.forEach((site, index) => {
+                const iconHtml = `
+                    <div class="custom-marker" style="
+                        background-color: ${theme.color}; 
+                        width: 24px; height: 24px;
+                        border: 2px solid #fff;">
+                        ${index + 1}
+                    </div>
+                `;
+                
+                const icon = L.divIcon({
+                    html: iconHtml,
+                    className: 'bg-transparent',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                const marker = L.marker([site.lat, site.lng], { icon: icon }).addTo(map);
+                
+                // Tooltip on Hover
+                marker.bindTooltip(site.name, {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -10],
+                    className: 'font-heading text-xs tracking-wider bg-antiquity-base border border-antiquity-gold px-2 py-1 shadow'
+                });
+
+                // Click Event
+                marker.on('click', () => {
+                    updateDetails(site, theme);
+                    
+                    // Highlight active marker visually (reset others)
+                    // (Simple logic: re-render is easiest, but let's just flyTo for now)
+                    map.flyTo([site.lat, site.lng], 7, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                });
+
+                currentLayers.push(marker);
+            });
+
+            // 5. Reset Panel
+            document.getElementById('location-details').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('panel-title').innerText = theme.title;
+            document.getElementById('loc-region').innerText = "Wähle eine Station";
+
+            // 6. Fly to bounds
+            if (latlngs.length > 0) {
+                map.flyToBounds(latlngs, { padding: [50, 50], duration: 2 });
+            }
+        }
+
+        function updateDetails(site, theme) {
+            const details = document.getElementById('location-details');
+            const empty = document.getElementById('empty-state');
+            
+            empty.classList.add('hidden');
+            details.classList.remove('hidden');
+            
+            // Re-trigger animation
+            details.classList.remove('animate-fade-in');
+            void details.offsetWidth; // trigger reflow
+            details.classList.add('animate-fade-in');
+
+            // Content
+            document.getElementById('panel-title').innerText = site.name;
+            
+            const regionEl = document.getElementById('loc-region');
+            regionEl.innerText = site.region;
+            regionEl.style.color = theme.color;
+
+            document.getElementById('loc-date').innerText = site.date;
+            document.getElementById('loc-text').innerText = site.desc;
+            document.getElementById('loc-quote').innerText = `"${site.quote}"`;
+            
+            const sourceEl = document.getElementById('loc-source');
+            sourceEl.innerText = site.source;
+            sourceEl.style.color = theme.color;
+
+            // Image (Using generic antique keywords + site name for variety)
+            const img = document.getElementById('loc-img');
+            const keywords = `${site.name},ancient ruins,roman,landscape`;
+            img.src = `https://source.unsplash.com/600x400/?${encodeURIComponent(keywords)}`;
+            
+            // Fallback for Unsplash Source deprecation or issues:
+            // Using a reliable static placeholder if unsplash source is flaky, 
+            // but the query param method usually works for demos.
+            // Alternative: specifically curated images array if you had one.
+            img.onerror = function() {
+                this.src = 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&q=80&w=600'; // Rome fallback
+            };
+        }
+
+    </script>
+</body>
+</html>
