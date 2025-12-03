@@ -210,7 +210,7 @@ const PLINIUS_DATA = [
   }
 ];
 
-// --- GEOJSON PLATZHALTER (Bleibt gleich) ---
+// --- GEOJSON PLATZHALTER ---
 const PLACEHOLDER_GEOJSON = {
   "type": "FeatureCollection",
   "features": [
@@ -228,7 +228,7 @@ const PLACEHOLDER_GEOJSON = {
 };
 
 export default function App() {
-  const [activeRoute, setActiveRoute] = useState('marc'); // 'marc' oder 'plinius'
+  const [activeRoute, setActiveRoute] = useState('marc'); 
   const [currentStep, setCurrentStep] = useState(0);
   const [showBorders, setShowBorders] = useState(true);
   
@@ -236,21 +236,19 @@ export default function App() {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const geoJsonLayerRef = useRef(null);
-  const polylineRef = useRef(null); // Ref für die Verbindungslinie
+  const polylineRef = useRef(null); 
 
-  // Wähle Daten basierend auf Route
   const activeData = activeRoute === 'marc' ? MARC_AUREL_DATA : PLINIUS_DATA;
   const data = activeData[currentStep];
   const isLast = currentStep === activeData.length - 1;
   const isFirst = currentStep === 0;
 
   // --- THEME COLORS ---
-  // Wir definieren ein Farb-Objekt für jede Route, um Styles dynamisch anzupassen
   const theme = activeRoute === 'marc' ? {
-    primary: 'amber', // Tailwind name prefix
-    primaryHex: '#d97706', // amber-600
-    darkHex: '#78350f', // amber-900
-    lightHex: '#fcd34d', // amber-300
+    primary: 'amber',
+    primaryHex: '#d97706',
+    darkHex: '#78350f',
+    lightHex: '#fcd34d',
     gradientFrom: 'from-amber-600',
     gradientTo: 'to-amber-800',
     selectionBg: 'selection:bg-amber-900',
@@ -259,32 +257,32 @@ export default function App() {
     subtitle: "Die Reise nach der Usurpation"
   } : {
     primary: 'cyan',
-    primaryHex: '#06b6d4', // cyan-500
-    darkHex: '#155e75', // cyan-800
-    lightHex: '#67e8f9', // cyan-300
+    primaryHex: '#06b6d4',
+    darkHex: '#155e75',
+    lightHex: '#67e8f9',
     gradientFrom: 'from-cyan-600',
     gradientTo: 'to-cyan-800',
     selectionBg: 'selection:bg-cyan-900',
-    icon: <PenTool className="text-slate-950 w-6 h-6" />, // Plinius war Schriftsteller/Verwalter
+    icon: <PenTool className="text-slate-950 w-6 h-6" />,
     title: "ITER PLINII",
     subtitle: "Reise in die Provinz Bithynien"
   };
 
   // --- LEAFLET INITIALIZATION ---
   useEffect(() => {
-    // CSS laden
+    // 1. CSS laden (WICHTIG für Rendering)
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
 
-    // Fonts laden
+    // 2. Fonts laden
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap';
     document.head.appendChild(fontLink);
 
-    // Leaflet laden
+    // 3. Leaflet JS laden
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.async = true;
@@ -299,7 +297,7 @@ export default function App() {
         mapInstanceRef.current = null;
       }
     };
-  }, []); // Run once on mount
+  }, []);
 
   const initMap = () => {
     if (!window.L || !mapContainerRef.current) return;
@@ -307,42 +305,40 @@ export default function App() {
 
     const L = window.L;
 
-    // Karte erstellen
+    // Karte erstellen (Mit Attribution und Zoom!)
     const map = L.map(mapContainerRef.current, {
-      zoomControl: false,
-      attributionControl: false
-    }).setView([40.0, 25.0], 5); // Zentraler Startpunkt
+      zoomControl: true, // Aktiviert die +/- Buttons
+      attributionControl: true // Zeigt "Leaflet" Link unten rechts
+    }).setView([40.0, 25.0], 5);
 
     mapInstanceRef.current = map;
 
     // Tile Layer (Dark Matter)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19
     }).addTo(map);
 
-    updateMapContent(); // Initialen Content laden
+    updateMapContent();
   };
 
-  // --- UPDATE MAP CONTENT (Markers & Lines) ---
-  // Diese Funktion wird aufgerufen, wenn sich die Route (activeRoute) ändert
   const updateMapContent = () => {
     if (!mapInstanceRef.current || !window.L) return;
     const L = window.L;
     const map = mapInstanceRef.current;
 
-    // 1. Alte Marker entfernen
+    // Marker säubern
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
-    // 2. Alte Polyline entfernen
+    // Polyline säubern
     if (polylineRef.current) {
         polylineRef.current.remove();
         polylineRef.current = null;
     }
 
-    // 3. Neue Marker setzen
+    // Neue Marker
     activeData.forEach((stop, index) => {
       const icon = L.divIcon({
         className: 'custom-marker-icon',
@@ -387,7 +383,7 @@ export default function App() {
       markersRef.current[index] = marker;
     });
 
-    // 4. Verbindungslinie zeichnen
+    // Verbindungslinie
     const latlngs = activeData.map(d => d.coords);
     const polyline = L.polyline(latlngs, {
         color: theme.primaryHex,
@@ -398,8 +394,7 @@ export default function App() {
     }).addTo(map);
     polylineRef.current = polyline;
 
-    // 5. GeoJSON Update (Optional: Man könnte verschiedene Grenzen für verschiedene Epochen laden)
-    // Hier nutzen wir dieselben Grenzen, passen aber die Farbe an
+    // GeoJSON
     if (geoJsonLayerRef.current) geoJsonLayerRef.current.remove();
     
     const borderStyle = {
@@ -428,7 +423,7 @@ export default function App() {
     geoJsonLayerRef.current = geoJsonLayer;
     if (showBorders) geoJsonLayer.addTo(map);
 
-    // 6. Tooltip Style anpassen (CSS Variablen Hack oder direct style injection update)
+    // CSS Update für Popups und Tooltips
     const styleId = 'leaflet-custom-styles';
     let styleEl = document.getElementById(styleId);
     if (!styleEl) {
@@ -465,22 +460,18 @@ export default function App() {
       .leaflet-tooltip-right::before { border-right-color: ${theme.primaryHex}; }
     `;
 
-    // 7. Reset View zum Start der neuen Route
     map.flyTo(activeData[0].coords, 6, {
         animate: true,
         duration: 1.5
     });
     
-    // Reset step
     setCurrentStep(0);
   };
 
-  // --- EFFECT: Route Wechsel ---
   useEffect(() => {
     updateMapContent();
   }, [activeRoute]);
 
-  // --- EFFECT: Toggle Borders ---
   useEffect(() => {
       if (!mapInstanceRef.current || !geoJsonLayerRef.current) return;
       if (showBorders) {
@@ -490,24 +481,20 @@ export default function App() {
       }
   }, [showBorders]);
 
-  // --- EFFECT: Step Update (Animation & Marker Highlight) ---
   useEffect(() => {
     if (!mapInstanceRef.current || !window.L) return;
     const map = mapInstanceRef.current;
     
-    // Fly to location
     map.flyTo(activeData[currentStep].coords, 6, {
       animate: true,
       duration: 2.0,
       easeLinearity: 0.25
     });
 
-    // Update Markers Visuals
     activeData.forEach((_, index) => {
       const markerEl = document.getElementById(`marker-${index}`);
       if (markerEl && markersRef.current[index]) {
         if (index === currentStep) {
-          // ACTIVE
           markerEl.style.backgroundColor = theme.primaryHex;
           markerEl.style.borderColor = '#ffffff';
           markerEl.style.transform = 'scale(1.5)';
@@ -515,14 +502,12 @@ export default function App() {
           markerEl.style.zIndex = '1000';
           markersRef.current[index].openPopup();
         } else if (index < currentStep) {
-          // PAST
           markerEl.style.backgroundColor = theme.darkHex;
           markerEl.style.borderColor = '#000';
           markerEl.style.transform = 'scale(1.0)';
           markerEl.style.boxShadow = 'none';
           markersRef.current[index].closePopup();
         } else {
-          // FUTURE
           markerEl.style.backgroundColor = '#1e293b';
           markerEl.style.borderColor = '#334155';
           markerEl.style.transform = 'scale(0.8)';
@@ -531,9 +516,8 @@ export default function App() {
         }
       }
     });
-  }, [currentStep, activeData, theme]); // Re-run when step or data/theme changes
+  }, [currentStep, activeData, theme]);
 
-  // --- UI HANDLERS ---
   const handleNext = () => { if (!isLast) setCurrentStep(prev => prev + 1); };
   const handlePrev = () => { if (!isFirst) setCurrentStep(prev => prev - 1); };
 
@@ -601,7 +585,7 @@ export default function App() {
       <div className="flex-1 flex flex-col md:flex-row relative">
         
         {/* LEFT PANEL: NARRATIVE */}
-        <div className={`w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1 transition-colors duration-500`} style={{ borderColor: `${theme.darkHex}40` }}> // 40 is hex opacity
+        <div className={`w-full md:w-[450px] flex-none relative z-10 bg-slate-900/95 border-r flex flex-col shadow-2xl h-1/2 md:h-auto order-2 md:order-1 transition-colors duration-500`} style={{ borderColor: `${theme.darkHex}40` }}> 
           
           {/* Progress Bar */}
           <div className="h-1 w-full bg-slate-800">
